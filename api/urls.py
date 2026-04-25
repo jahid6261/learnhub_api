@@ -5,7 +5,8 @@ from courses.views import (
     CategoryViewSet,
     CoursesViewSet,
     LessonViewSet,
-    MaterialViewSet
+    MaterialViewSet,
+    EnrollmentViewSet
 )
 
 # 🔹 Main router
@@ -18,7 +19,7 @@ courses_router = routers.NestedDefaultRouter( router,'courses',  lookup='course'
 courses_router.register('lessons',   LessonViewSet,    basename='course-lessons') 
 
 courses_router.register('metrials',MaterialViewSet,basename="course-materials") 
-
+courses_router.register('enrollments', EnrollmentViewSet, basename='course-enrollments')
   
 urlpatterns = [
     path('', include(router.urls)),

@@ -35,6 +35,8 @@ class EnrollmentSerializers(serializers.ModelSerializer):
         model=Enrollment
         
         fields=['id','student','course','price','progress','total_mark','is_certificate_ready','is_completed','is_active',
-                'is_active','created_at','updated_at']                        
+                'is_active','created_at','updated_at']   
+        
+        read_only_fields = ['student', 'total_mark', 'progress', 'is_active','is_certificate_ready','is_completed','total_marks']                     
         
         

@@ -4,14 +4,15 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from django.db.models import Count
 from rest_framework.viewsets import ModelViewSet
-from courses.models import Category,Course,Lesson,Material
-from courses.serializers import CategorySerializers,CourseSerializers,LessonSerializers,MaterialSerializers
+from courses.models import Category,Course,Lesson,Material,Enrollment
+from courses.serializers import CategorySerializers,CourseSerializers,LessonSerializers,MaterialSerializers,EnrollmentSerializers
 
 from api.permissions import IsAdminOrReadOnly
-from courses.permissions import IsInstructorOrReadOnly,IsLessonManagerOrStudent,IsMaterialManagerorStudent
+from courses.permissions import IsInstructorOrReadOnly,IsLessonManagerOrStudent,IsMaterialManagerorStudent,EnrollmentPermission
 from courses.filters import CourseFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter,OrderingFilter
+from rest_framework import generics
 
 # Create your views here.
 
@@ -94,9 +95,45 @@ class MaterialViewSet(ModelViewSet):
             qs = qs.filter(course_id=course_id)
             
         return qs
-       
      
+class EnrollmentViewSet(ModelViewSet):
+    serializer_class = EnrollmentSerializers
+    permission_classes = [ EnrollmentPermission]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.role == 'admin':
+            return Enrollment.objects.all()
+
+        if user.role == 'teacher':
+     
+            return Enrollment.objects.filter(course__teacher=user)
+
+      
+        return Enrollment.objects.filter(student=user)
+     
+     
+    def perform_create(self, serializer):
+       course_id = self.kwargs.get('course_pk')
        
+       from .models import Course
+       course_obj = Course.objects.get(id=course_id)
+       
+       serializer.save(  
+            student=self.request.user, 
+            course=course_obj,
+            price=course_obj.price
+        )
+      
+       
+       
+        
+        
+       
+      
+      
+        
      
 
        

@@ -116,6 +116,27 @@ class IsMaterialManagerorStudent(permissions.BasePermission):
          
         return False
     
+    
+class EnrollmentPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        return True
+
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        
+      
+        if user.role == 'admin' or user.is_staff:
+            return True
+        
+       
+        if user.role == 'teacher':
+            return obj.course.teacher == user
+            
+        
+        return obj.student == user    
+    
 
 
 
