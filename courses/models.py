@@ -91,7 +91,7 @@ class Material(models.Model):
     
 class Enrollment(models.Model):
     student = models.ForeignKey(User, on_delete=models.CASCADE)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
     price = models.FloatField()
     progress = models.IntegerField(default=0)
     

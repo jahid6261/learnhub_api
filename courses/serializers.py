@@ -22,7 +22,7 @@ class LessonSerializers(serializers.ModelSerializer):
     class Meta :
         model=Lesson
         fields=['id','title','course','description','video','is_active','created_at','updated_at']
-
+    
 
 class MaterialSerializers(serializers.ModelSerializer):
     class Meta :
