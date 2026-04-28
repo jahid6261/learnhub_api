@@ -20,11 +20,42 @@ from django.conf import settings
 
 from django.conf.urls.static import static
 
+from rest_framework import permissions
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+from .views import api_root_view
+
+
+ 
+schema_view = get_schema_view(
+   openapi.Info(
+      title="E-Learning Platform API",
+      default_version='v1',
+      description="""
+A RESTful API for an E-Learning Platform.
+
+Features:
+- User authentication (Student & Instructor)
+- Course creation and management
+- Lesson video system
+- Course materials (PDF, DOC, PPT)
+- Student enrollment and progress tracking
+- Certificate readiness system
+      """,
+      terms_of_service="",
+      contact=openapi.Contact(email="jahidalam01741@gmail.com"),
+      license=openapi.License(name=""),
+   ),
+   public=True,
+   permission_classes=(permissions.AllowAny,),
+)
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/',include('api.urls')),
-    path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
+    path('', api_root_view),
+    
+    path('api/v1/', include('api.urls'), name='api-root'),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui')
+   
     
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

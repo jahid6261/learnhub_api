@@ -9,7 +9,7 @@ from courses.views import (
     EnrollmentViewSet
 )
 
-# 🔹 Main router
+#  Main router
 router = routers.DefaultRouter()
 router.register('courses', CoursesViewSet, basename='courses')
 router.register('category', CategoryViewSet, basename='category')
@@ -23,7 +23,10 @@ courses_router.register('enrollments', EnrollmentViewSet, basename='course-enrol
   
 urlpatterns = [
     path('', include(router.urls)),
-    path('', include(courses_router.urls)),
+    path('', include(courses_router.urls)), 
+    path('auth/', include('djoser.urls')),
+    path('auth/', include('djoser.urls.jwt')),
+    
 ]
  
   
