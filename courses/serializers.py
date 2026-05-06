@@ -29,14 +29,12 @@ class MaterialSerializers(serializers.ModelSerializer):
         model=Material
         fields=['id','title','course','description','file','file_type','created_at','updated_at','is_active']
 
-
 class EnrollmentSerializers(serializers.ModelSerializer):
+    student_name = serializers.ReadOnlyField(source='student.email')
+    course_title = serializers.ReadOnlyField(source='course.title')
+    
     class Meta:
-        model=Enrollment
-        
-        fields=['id','student','course','price','progress','total_mark','is_certificate_ready','is_completed','is_active',
-                'is_active','created_at','updated_at']   
-        
-        read_only_fields = ['student', 'total_mark', 'progress', 'is_active','is_certificate_ready','is_completed','total_marks']                     
-        
-        
+        model = Enrollment
+        fields = '__all__'
+        read_only_fields = ['student', 'price','progress', 'is_completed',
+                             'is_certificate_ready','total_mark','is_active']

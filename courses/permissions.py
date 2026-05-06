@@ -3,18 +3,22 @@ from courses.models import Course
 class IsInstructorOrReadOnly(permissions.BasePermission):
 
     def has_permission(self, request, view):
-     
+  
         if request.method in permissions.SAFE_METHODS:
             return True
 
-     
-        if request.method == 'POST':
-            return request.user.is_authenticated and (
-                request.user.role == 'admin' or request.user.is_staff
-            )
+      
+        return request.user.is_authenticated and (
+            request.user.role == 'admin' or request.user.is_staff
+        )
 
-        
-        return request.user.is_authenticated
+    def has_object_permission(self, request, view, obj):
+       
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+      
+        return request.user.role == 'admin' or request.user.is_staff
 
     def has_object_permission(self, request, view, obj):
      
@@ -117,30 +121,43 @@ class IsMaterialManagerorStudent(permissions.BasePermission):
         return False
     
     
+
+
 class EnrollmentPermission(permissions.BasePermission):
+    
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
-        return True
-
-    def has_object_permission(self, request, view, obj):
-        user = request.user
         
-      
-        if user.role == 'admin' or user.is_staff:
+        user = request.user
+        role = getattr(user, 'role', None)
+        
+  
+        if request.method in permissions.SAFE_METHODS:
             return True
         
-       
-        if user.role == 'teacher':
-            return obj.course.teacher == user
-            
+
+        if request.method == 'POST':
+            return role == 'student'
         
-        return obj.student == user    
+        return False
     
-
-
-
-  
-
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        role = getattr(user, 'role', None)
+        
+       
+        if user.is_staff or role == 'admin':
+            return True
+        
+      
+        if role == 'teacher':
+            return obj.course.instructor == user
+        
+   
+        if role == 'student':
+            return obj.student == user
+        
+        return False
      
       

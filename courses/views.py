@@ -13,7 +13,10 @@ from courses.filters import CourseFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter,OrderingFilter
 from rest_framework import generics
-
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.db import IntegrityError
 # Create your views here.
 
 class CategoryViewSet(ModelViewSet):
@@ -34,8 +37,15 @@ class CoursesViewSet(ModelViewSet):
     ordering_fields=['price']
     
     permission_classes=[IsInstructorOrReadOnly]
-    def perform_create(self, serializer):
-        serializer.save(instructor=self.request.user)
+    def get_queryset(self):
+        user = self.request.user
+        
+ 
+        if user.is_authenticated and user.role == 'teacher':
+            return Course.objects.filter(instructor=user)
+        
+        
+        return Course.objects.all()
         
 class LessonViewSet(ModelViewSet):
     serializer_class = LessonSerializers
@@ -96,38 +106,85 @@ class MaterialViewSet(ModelViewSet):
             
         return qs
      
-class EnrollmentViewSet(ModelViewSet):
+class EnrollmentViewSet(viewsets.ModelViewSet):
     serializer_class = EnrollmentSerializers
-    permission_classes = [ EnrollmentPermission]
-
+    permission_classes = [EnrollmentPermission]
+    
     def get_queryset(self):
         user = self.request.user
+        role = getattr(user, 'role', None)
+        course_id = self.kwargs.get('course_pk')
+        
+        
+        if user.is_staff or role == 'admin':
+            qs = Enrollment.objects.all()
+        
 
-        if user.role == 'admin':
-            return Enrollment.objects.all()
-
-        if user.role == 'teacher':
+        elif role == 'teacher':
+            qs = Enrollment.objects.filter(course__instructor=user)
+        
+        
+        elif role == 'student':
+            qs = Enrollment.objects.filter(student=user, is_active=True)
+        
+        else:
+            return Enrollment.objects.none()
+        
+       
+        if course_id:
+            qs = qs.filter(course_id=course_id)
+        
+        return qs
+    
+    def create(self, request, *args, **kwargs):
+        """Student নিজে নিজে এনরোল করবে"""
+        user = request.user
+        role = getattr(user, 'role', None)
+        course_id = self.kwargs.get('course_pk')
+        
      
-            return Enrollment.objects.filter(course__teacher=user)
-
-      
-        return Enrollment.objects.filter(student=user)
-     
-     
-    def perform_create(self, serializer):
-       course_id = self.kwargs.get('course_pk')
+        if role != 'student':
+            return Response(
+                {'error': 'Only students can enroll themselves'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            course = Course.objects.get(id=course_id)
+        except Course.DoesNotExist:
+            return Response(
+                {'error': 'Course not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
        
-       from .models import Course
-       course_obj = Course.objects.get(id=course_id)
+        if course.instructor == user:
+            return Response(
+                {'error': 'You cannot enroll in your own course'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        
+        if Enrollment.objects.filter(student=user, course=course).exists():
+            return Response(
+                {'error': 'Already enrolled in this course'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
        
-       serializer.save(  
-            student=self.request.user, 
-            course=course_obj,
-            price=course_obj.price
-        )
-      
-       
-       
+        try:
+            enrollment = Enrollment.objects.create(
+                student=user,
+                course=course,
+                price=course.price
+            )
+            serializer = self.get_serializer(enrollment)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         
        
